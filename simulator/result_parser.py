@@ -3,11 +3,7 @@ import re
 
 class SimulationResultParser:
 
-    def parse(
-        self,
-        compilation,
-        simulation
-    ):
+    def parse(self, compilation, simulation):
 
         compile_success = compilation.get(
             "success",
@@ -19,24 +15,19 @@ class SimulationResultParser:
             False
         )
 
-        stdout = simulation.get(
+        output = simulation.get(
             "stdout",
             ""
         )
 
-        stderr = simulation.get(
+        errors = simulation.get(
             "stderr",
             ""
         )
 
-        output = stdout
-
-        if stderr:
-            output += "\n" + stderr
-
-        # --------------------------------------------------
+        # ---------------------------------------------------------
         # Compilation failure
-        # --------------------------------------------------
+        # ---------------------------------------------------------
 
         if not compile_success:
 
@@ -46,15 +37,14 @@ class SimulationResultParser:
                 "simulation_success": False,
                 "passed_tests": 0,
                 "failed_tests": 0,
+                "total_tests": 0,
                 "output": output,
-                "errors": [stderr] if stderr else [
-                    "Compilation failed."
-                ],
+                "errors": errors,
             }
 
-        # --------------------------------------------------
+        # ---------------------------------------------------------
         # Simulation timeout
-        # --------------------------------------------------
+        # ---------------------------------------------------------
 
         if simulation.get("timeout", False):
 
@@ -64,15 +54,14 @@ class SimulationResultParser:
                 "simulation_success": False,
                 "passed_tests": 0,
                 "failed_tests": 0,
+                "total_tests": 0,
                 "output": output,
-                "errors": [
-                    "Simulation timed out."
-                ],
+                "errors": errors,
             }
 
-        # --------------------------------------------------
+        # ---------------------------------------------------------
         # Simulation execution failure
-        # --------------------------------------------------
+        # ---------------------------------------------------------
 
         if not simulation_success:
 
@@ -82,318 +71,234 @@ class SimulationResultParser:
                 "simulation_success": False,
                 "passed_tests": 0,
                 "failed_tests": 0,
+                "total_tests": 0,
                 "output": output,
-                "errors": [stderr] if stderr else [
-                    "Simulation execution failed."
-                ],
+                "errors": errors,
             }
 
-        # --------------------------------------------------
-        # Extract total test count
-        #
-        # Supports multiple LLM-generated formats:
-        #
-        # Total Test Cases Run : 256
-        # Total Tests Executed : 256
-        # Total Tests Conducted : 256
-        # Total Test Vectors Applied : 256
-        # --------------------------------------------------
+        # ---------------------------------------------------------
+        # Missing output
+        # ---------------------------------------------------------
 
-        total_patterns = [
+        if not output:
 
-            r"Total\s+Test\s+Cases\s+Run\s*:\s*(\d+)",
+            return {
+                "status": "SIMULATION_ERROR",
+                "compile_success": True,
+                "simulation_success": True,
+                "passed_tests": 0,
+                "failed_tests": 0,
+                "total_tests": 0,
+                "output": output,
+                "errors": errors,
+            }
 
-            r"Total\s+Tests\s+Executed\s*:\s*(\d+)",
-
-            r"Total\s+Tests\s+Conducted\s*:\s*(\d+)",
-
-            r"Total\s+Test\s+Vectors\s+Applied\s*:\s*(\d+)",
-
-        ]
+        # ---------------------------------------------------------
+        # Parse total test count
+        # ---------------------------------------------------------
 
         total_tests = 0
+
+        total_patterns = [
+            r"Total Tests Conducted\s*:\s*(\d+)",
+            r"Total Tests Run\s*:\s*(\d+)",
+            r"Total Test Cases Run\s*:\s*(\d+)",
+            r"Total Tests Executed\s*:\s*(\d+)",
+            r"Total Test Vectors Applied\s*:\s*(\d+)",
+        ]
 
         for pattern in total_patterns:
 
             match = re.search(
                 pattern,
-                stdout,
+                output,
                 re.IGNORECASE
             )
 
             if match:
-
                 total_tests = int(
                     match.group(1)
                 )
-
                 break
 
-        # --------------------------------------------------
-        # Extract passed test count
-        #
-        # Supports:
-        #
-        # Total Passed : 256
-        # Passed Test Cases : 256
-        # --------------------------------------------------
-
-        passed_patterns = [
-
-            r"Total\s+Passed\s*:\s*(\d+)",
-
-            r"Passed\s+Test\s+Cases\s*:\s*(\d+)",
-
-        ]
+        # ---------------------------------------------------------
+        # Parse passed count
+        # ---------------------------------------------------------
 
         passed_tests = 0
+
+        passed_patterns = [
+            r"Total Passed\s*:\s*(\d+)",
+            r"Total Tests Passed\s*:\s*(\d+)",
+            r"Passed Test Cases\s*:\s*(\d+)",
+        ]
 
         for pattern in passed_patterns:
 
             match = re.search(
                 pattern,
-                stdout,
+                output,
                 re.IGNORECASE
             )
 
             if match:
-
                 passed_tests = int(
                     match.group(1)
                 )
-
                 break
 
-        # --------------------------------------------------
-        # Extract failed test count
-        #
-        # Supports:
-        #
-        # Total Failures : 256
-        # Total Errors Found : 256
-        # Total Failed : 256
-        # Failed Test Cases : 256
-        # --------------------------------------------------
-
-        failure_patterns = [
-
-            r"Total\s+Failures\s*:\s*(\d+)",
-
-            r"Total\s+Errors\s+Found\s*:\s*(\d+)",
-
-            r"Total\s+Failed\s*:\s*(\d+)",
-
-            r"Failed\s+Test\s+Cases\s*:\s*(\d+)",
-
-        ]
+        # ---------------------------------------------------------
+        # Parse failed count
+        # ---------------------------------------------------------
 
         failed_tests = 0
 
-        for pattern in failure_patterns:
+        failed_patterns = [
+            r"Total Failed\s*:\s*(\d+)",
+            r"Total Failures\s*:\s*(\d+)",
+            r"Failed Test Cases\s*:\s*(\d+)",
+            r"Total Errors Found\s*:\s*(\d+)",
+        ]
+
+        for pattern in failed_patterns:
 
             match = re.search(
                 pattern,
-                stdout,
+                output,
                 re.IGNORECASE
             )
 
             if match:
-
                 failed_tests = int(
                     match.group(1)
                 )
-
                 break
 
-        # --------------------------------------------------
-        # If passed count wasn't explicitly reported,
-        # calculate it from total - failed.
-        # --------------------------------------------------
+        # ---------------------------------------------------------
+        # Count individual PASS / FAIL test lines
+        # ---------------------------------------------------------
 
-        if passed_tests == 0 and total_tests > 0:
+        individual_passes = re.findall(
+            r"^\s*PASS\s*:\s*Test\s+\d+",
+            output,
+            re.IGNORECASE | re.MULTILINE
+        )
 
-            passed_tests = max(
-                total_tests - failed_tests,
-                0
+        individual_failures = re.findall(
+            r"^\s*FAIL\s*:\s*Test\s+\d+",
+            output,
+            re.IGNORECASE | re.MULTILINE
+        )
+
+        # ---------------------------------------------------------
+        # Derive total from individual results
+        # ---------------------------------------------------------
+
+        if total_tests == 0:
+
+            total_tests = (
+                len(individual_passes)
+                + len(individual_failures)
             )
 
-        # --------------------------------------------------
-        # Detect explicit final verification status
-        #
-        # Supports:
-        #
-        # OVERALL STATUS: PASSED
-        # OVERALL TEST RESULT: PASSED
-        # OVERALL TEST STATUS: PASSED
-        # --------------------------------------------------
+        # ---------------------------------------------------------
+        # Derive passed count
+        # ---------------------------------------------------------
 
-        status_patterns = [
+        if passed_tests == 0 and individual_passes:
 
-            r"OVERALL\s+STATUS\s*:\s*(PASSED|FAILED)",
+            passed_tests = len(
+                individual_passes
+            )
 
-            r"OVERALL\s+TEST\s+RESULT\s*:\s*(PASSED|FAILED)",
+        # ---------------------------------------------------------
+        # Derive failed count
+        # ---------------------------------------------------------
 
-            r"OVERALL\s+TEST\s+STATUS\s*:\s*(PASSED|FAILED)",
+        if failed_tests == 0 and individual_failures:
 
+            failed_tests = len(
+                individual_failures
+            )
+
+        # ---------------------------------------------------------
+        # Derive passed tests from total - failures
+        # ---------------------------------------------------------
+
+        if (
+            passed_tests == 0
+            and total_tests > 0
+        ):
+
+            passed_tests = (
+                total_tests
+                - failed_tests
+            )
+
+        # ---------------------------------------------------------
+        # Determine verification status
+        # ---------------------------------------------------------
+
+        upper_output = output.upper()
+
+        pass_markers = [
+            "OVERALL STATUS: PASSED",
+            "OVERALL TEST RESULT: PASSED",
+            "OVERALL TEST STATUS: PASSED",
+            "RESULT: ALL TESTS PASSED SUCCESSFULLY",
         ]
 
-        final_status = None
+        fail_markers = [
+            "OVERALL STATUS: FAILED",
+            "OVERALL TEST RESULT: FAILED",
+            "OVERALL TEST STATUS: FAILED",
+        ]
 
-        for pattern in status_patterns:
-
-            match = re.search(
-                pattern,
-                stdout,
-                re.IGNORECASE
-            )
-
-            if match:
-
-                final_status = (
-                    match.group(1).upper()
-                )
-
-                break
-
-        # --------------------------------------------------
-        # Handle:
-        #
-        # RESULT: ALL TESTS PASSED SUCCESSFULLY
-        # --------------------------------------------------
-
-        if final_status is None:
-
-            success_match = re.search(
-                r"RESULT\s*:\s*ALL\s+TESTS\s+PASSED\s+SUCCESSFULLY",
-                stdout,
-                re.IGNORECASE
-            )
-
-            if success_match:
-
-                final_status = "PASSED"
-
-        # --------------------------------------------------
-        # Explicit PASS
-        # --------------------------------------------------
-
-        if final_status == "PASSED":
-
-            return {
-                "status": "PASS",
-                "compile_success": True,
-                "simulation_success": True,
-                "passed_tests": passed_tests,
-                "failed_tests": failed_tests,
-                "output": stdout,
-                "errors": [],
-            }
-
-        # --------------------------------------------------
-        # Explicit FAIL
-        # --------------------------------------------------
-
-        if final_status == "FAILED":
-
-            return {
-                "status": "FAIL",
-                "compile_success": True,
-                "simulation_success": True,
-                "passed_tests": passed_tests,
-                "failed_tests": failed_tests,
-                "output": stdout,
-                "errors": [],
-            }
-
-        # --------------------------------------------------
-        # Statistical fallback
-        #
-        # If the simulation reports a total number of tests,
-        # the statistics themselves are enough to determine
-        # PASS or FAIL.
-        # --------------------------------------------------
-
-        if total_tests > 0:
-
-            if failed_tests == 0:
-
-                return {
-                    "status": "PASS",
-                    "compile_success": True,
-                    "simulation_success": True,
-                    "passed_tests": passed_tests,
-                    "failed_tests": 0,
-                    "output": stdout,
-                    "errors": [],
-                }
-
-            return {
-                "status": "FAIL",
-                "compile_success": True,
-                "simulation_success": True,
-                "passed_tests": passed_tests,
-                "failed_tests": failed_tests,
-                "output": stdout,
-                "errors": [],
-            }
-
-        # --------------------------------------------------
-        # Fallback for simple PASS / FAIL output
-        # --------------------------------------------------
-
-        fail_count = len(
-            re.findall(
-                r"^\s*FAIL\b",
-                stdout,
-                re.MULTILINE
-            )
+        explicit_pass = any(
+            marker in upper_output
+            for marker in pass_markers
         )
 
-        pass_count = len(
-            re.findall(
-                r"^\s*PASS\b",
-                stdout,
-                re.MULTILINE
-            )
+        explicit_fail = any(
+            marker in upper_output
+            for marker in fail_markers
         )
 
-        if fail_count > 0:
+        if explicit_pass:
 
-            return {
-                "status": "FAIL",
-                "compile_success": True,
-                "simulation_success": True,
-                "passed_tests": pass_count,
-                "failed_tests": fail_count,
-                "output": stdout,
-                "errors": [],
-            }
+            status = "PASS"
 
-        if pass_count > 0:
+        elif explicit_fail:
 
-            return {
-                "status": "PASS",
-                "compile_success": True,
-                "simulation_success": True,
-                "passed_tests": pass_count,
-                "failed_tests": 0,
-                "output": stdout,
-                "errors": [],
-            }
+            status = "FAIL"
 
-        # --------------------------------------------------
-        # Unknown verification result
-        # --------------------------------------------------
+        elif (
+            total_tests > 0
+            and failed_tests == 0
+            and passed_tests == total_tests
+        ):
+
+            status = "PASS"
+
+        elif failed_tests > 0:
+
+            status = "FAIL"
+
+        else:
+
+            status = "SIMULATION_ERROR"
+
+        # ---------------------------------------------------------
+        # Final structured result
+        # ---------------------------------------------------------
 
         return {
-            "status": "COMPLETED",
+            "status": status,
             "compile_success": True,
             "simulation_success": True,
             "passed_tests": passed_tests,
             "failed_tests": failed_tests,
-            "output": stdout,
-            "errors": [
-                "Simulation completed but no "
-                "verification result marker was found."
-            ],
+            "total_tests": total_tests,
+            "output": output,
+            "errors": errors,
         }

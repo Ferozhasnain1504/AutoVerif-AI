@@ -78,7 +78,14 @@ def main():
         "VERIFICATION_PLAN_CREATED",
         "TESTBENCH_GENERATED",
         "SIMULATION_COMPLETED",
-        "VERIFICATION_SUCCESSFUL",
+        "FAILURE_DETECTED",
+        "AGENT_DECISION_MADE",
+        "FAULT_LOCALIZED",
+        "FAULT_DIAGNOSED",
+        "PATCH_GENERATED",
+        "PATCH_APPLIED",
+        "REPAIR_VALIDATED",
+        "SELF_HEALING_SUCCESSFUL",
     ]
 
     missing_events = [
@@ -93,7 +100,7 @@ def main():
     print("\n========================================")
 
     if (
-        result["status"] == "SUCCESS"
+        result["status"] == "SELF_HEALED"
         and len(missing_events) == 0
     ):
 

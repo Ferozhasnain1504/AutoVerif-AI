@@ -11,6 +11,7 @@ from agent.fault_diagnoser import FaultDiagnoser
 from agent.patch_generator import PatchGenerator
 from agent.patch_applier import PatchApplier
 from agent.state import AgentState
+from agent.logger import ExecutionLogger
 
 from simulator.simulation_engine import SimulationEngine
 
@@ -18,7 +19,6 @@ from simulator.simulation_engine import SimulationEngine
 class VerificationAgent:
 
     def __init__(self):
-
         self.analyzer = RTLAnalyzer()
         self.planner = VerificationPlanner()
         self.generator = TestbenchGenerator()
@@ -32,6 +32,7 @@ class VerificationAgent:
         self.fault_diagnoser = FaultDiagnoser()
         self.patch_generator = PatchGenerator()
         self.patch_applier = PatchApplier()
+        self.logger = ExecutionLogger()
 
     def run(
         self,
@@ -43,6 +44,9 @@ class VerificationAgent:
             current_rtl=str(rtl_file),
             max_attempts=max_attempts
         )
+
+        def save_execution_log():
+            self.logger.log_state(state)
 
         print("\n========================================")
         print("        AUTOVERIF-AI AGENT")
@@ -193,6 +197,8 @@ class VerificationAgent:
                     "       VERIFICATION SUCCESSFUL"
                 )
                 print("========================================")
+
+                save_execution_log()
 
                 return {
                     "status": "SUCCESS",
@@ -552,6 +558,8 @@ class VerificationAgent:
                                 "========================================"
                             )
 
+                            save_execution_log()
+
                             return {
                                 "status":
                                     "SELF_HEALED",
@@ -611,6 +619,8 @@ class VerificationAgent:
         print("       MAX ATTEMPTS REACHED")
         print("========================================")
 
+        save_execution_log()
+        
         return {
             "status": "FAILED",
             "attempts": max_attempts,
