@@ -1,0 +1,61 @@
+#! /c/Source/iverilog-install/bin/vvp
+:ivl_version "12.0 (devel)" "(s20150603-1539-g2693dd32b)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision - 12;
+:vpi_module "C:\iverilog\lib\ivl\system.vpi";
+:vpi_module "C:\iverilog\lib\ivl\vhdl_sys.vpi";
+:vpi_module "C:\iverilog\lib\ivl\vhdl_textio.vpi";
+:vpi_module "C:\iverilog\lib\ivl\v2005_math.vpi";
+:vpi_module "C:\iverilog\lib\ivl\va_math.vpi";
+S_00000181546fb850 .scope module, "adder_tb" "adder_tb" 2 3;
+ .timescale -9 -12;
+v00000181546fc420_0 .var "a", 3 0;
+v00000181546fc4c0_0 .var "b", 3 0;
+v00000181546fc560_0 .net "sum", 4 0, L_00000181546fc740;  1 drivers
+S_00000181545b5b20 .scope module, "uut" "adder" 2 10, 3 1 0, S_00000181546fb850;
+ .timescale 0 0;
+    .port_info 0 /INPUT 4 "a";
+    .port_info 1 /INPUT 4 "b";
+    .port_info 2 /OUTPUT 5 "sum";
+v0000018154583490_0 .net *"_ivl_0", 4 0, L_00000181546fc600;  1 drivers
+L_00000181545fb858 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v00000181546fb9e0_0 .net *"_ivl_3", 0 0, L_00000181545fb858;  1 drivers
+v00000181546fba80_0 .net *"_ivl_4", 4 0, L_00000181546fc6a0;  1 drivers
+L_00000181545fb8a0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v00000181545b5cb0_0 .net *"_ivl_7", 0 0, L_00000181545fb8a0;  1 drivers
+v00000181545b5d50_0 .net "a", 3 0, v00000181546fc420_0;  1 drivers
+v00000181545b5df0_0 .net "b", 3 0, v00000181546fc4c0_0;  1 drivers
+v00000181545b5e90_0 .net "sum", 4 0, L_00000181546fc740;  alias, 1 drivers
+L_00000181546fc600 .concat [ 4 1 0 0], v00000181546fc420_0, L_00000181545fb858;
+L_00000181546fc6a0 .concat [ 4 1 0 0], v00000181546fc4c0_0, L_00000181545fb8a0;
+L_00000181546fc740 .arith/sum 5, L_00000181546fc600, L_00000181546fc6a0;
+    .scope S_00000181546fb850;
+T_0 ;
+    %vpi_call 2 18 "$display", "Starting simulation..." {0 0 0};
+    %pushi/vec4 0, 0, 4;
+    %store/vec4 v00000181546fc420_0, 0, 4;
+    %pushi/vec4 0, 0, 4;
+    %store/vec4 v00000181546fc4c0_0, 0, 4;
+    %delay 10000, 0;
+    %vpi_call 2 24 "$display", "a=%d b=%d sum=%d", v00000181546fc420_0, v00000181546fc4c0_0, v00000181546fc560_0 {0 0 0};
+    %pushi/vec4 5, 0, 4;
+    %store/vec4 v00000181546fc420_0, 0, 4;
+    %pushi/vec4 3, 0, 4;
+    %store/vec4 v00000181546fc4c0_0, 0, 4;
+    %delay 10000, 0;
+    %vpi_call 2 30 "$display", "a=%d b=%d sum=%d", v00000181546fc420_0, v00000181546fc4c0_0, v00000181546fc560_0 {0 0 0};
+    %pushi/vec4 15, 0, 4;
+    %store/vec4 v00000181546fc420_0, 0, 4;
+    %pushi/vec4 15, 0, 4;
+    %store/vec4 v00000181546fc4c0_0, 0, 4;
+    %delay 10000, 0;
+    %vpi_call 2 36 "$display", "a=%d b=%d sum=%d", v00000181546fc420_0, v00000181546fc4c0_0, v00000181546fc560_0 {0 0 0};
+    %vpi_call 2 38 "$finish" {0 0 0};
+    %end;
+    .thread T_0;
+# The file index is used to find the file name in the following table.
+:file_names 4;
+    "N/A";
+    "<interactive>";
+    "testbench\adder_tb.v";
+    "rtl\adder.v";
