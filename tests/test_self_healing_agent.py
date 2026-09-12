@@ -44,7 +44,73 @@ def main():
         )
     )
 
+    # ----------------------------------------------
+    # Verify agent state
+    # ----------------------------------------------
+
+    state = result.get("state")
+
+    if not state:
+
+        print("\nSTATE TEST: FAIL")
+        print("Agent state was not returned.")
+
+        return
+
     print("\n========================================")
+    print("          AGENT EXECUTION HISTORY")
+    print("========================================")
+
+    history = state["history"]
+
+    for event in history:
+
+        print(
+            f"- {event['event']}"
+        )
+
+    # ----------------------------------------------
+    # Validate required events
+    # ----------------------------------------------
+
+    required_events = [
+        "RTL_ANALYZED",
+        "VERIFICATION_PLAN_CREATED",
+        "TESTBENCH_GENERATED",
+        "SIMULATION_COMPLETED",
+        "VERIFICATION_SUCCESSFUL",
+    ]
+
+    missing_events = [
+        event
+        for event in required_events
+        if event not in [
+            item["event"]
+            for item in history
+        ]
+    ]
+
+    print("\n========================================")
+
+    if (
+        result["status"] == "SUCCESS"
+        and len(missing_events) == 0
+    ):
+
+        print("FULL AGENT STATE TEST: PASS")
+
+    else:
+
+        print("FULL AGENT STATE TEST: FAIL")
+
+        if missing_events:
+
+            print(
+                "Missing events:",
+                missing_events
+            )
+
+    print("========================================")
 
 
 if __name__ == "__main__":

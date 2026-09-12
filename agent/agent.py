@@ -10,6 +10,7 @@ from agent.fault_localizer import FaultLocalizer
 from agent.fault_diagnoser import FaultDiagnoser
 from agent.patch_generator import PatchGenerator
 from agent.patch_applier import PatchApplier
+from agent.state import AgentState
 
 from simulator.simulation_engine import SimulationEngine
 
@@ -37,6 +38,11 @@ class VerificationAgent:
         rtl_file,
         max_attempts=3
     ):
+        state = AgentState(
+            rtl_file=str(rtl_file),
+            current_rtl=str(rtl_file),
+            max_attempts=max_attempts
+        )
 
         print("\n========================================")
         print("        AUTOVERIF-AI AGENT")
@@ -46,6 +52,15 @@ class VerificationAgent:
 
         rtl_info = self.analyzer.analyze(
             rtl_file
+        )
+
+        state.rtl_info = rtl_info
+
+        state.record_event(
+            "RTL_ANALYZED",
+            {
+                "module": rtl_info["module"]
+            }
         )
 
         print("RTL analysis completed.")
@@ -58,18 +73,27 @@ class VerificationAgent:
             )
         )
 
+        state.verification_plan = verification_plan
+
+        state.record_event(
+            "VERIFICATION_PLAN_CREATED"
+        )
+
         print("Verification plan created.")
 
         adaptation = None
 
         current_rtl = Path(rtl_file)
 
-        repair_attempt = 0
+        state.current_rtl = str(
+            current_rtl
+        )
 
         for attempt in range(
             1,
             max_attempts + 1
         ):
+            state.attempt = attempt
 
             print("\n========================================")
             print(
@@ -100,6 +124,13 @@ class VerificationAgent:
                 encoding="utf-8"
             )
 
+            state.record_event(
+                "TESTBENCH_GENERATED",
+                {
+                    "file": str(testbench_file)
+                }
+            )
+
             print(
                 f"Testbench saved to: {testbench_file}"
             )
@@ -115,6 +146,15 @@ class VerificationAgent:
                     str(current_rtl),
                     str(testbench_file)
                 )
+            )
+
+            state.simulation_result = simulation_result
+
+            state.record_event(
+                "SIMULATION_COMPLETED",
+                {
+                    "status": simulation_result["status"]
+                }
             )
 
             print(
@@ -142,6 +182,12 @@ class VerificationAgent:
 
             if simulation_result["status"] == "PASS":
 
+                state.status = "SUCCESS"
+
+                state.record_event(
+                    "VERIFICATION_SUCCESSFUL"
+                )
+
                 print("\n========================================")
                 print(
                     "       VERIFICATION SUCCESSFUL"
@@ -161,7 +207,8 @@ class VerificationAgent:
                     "repaired_rtl":
                         str(current_rtl),
                     "repair_attempts":
-                        repair_attempt,
+                        state.repair_attempts,
+                    "state": state.to_dict(),
                 }
 
             # -------------------------------------------------
@@ -172,6 +219,20 @@ class VerificationAgent:
                 self.failure_analyzer.analyze(
                     simulation_result
                 )
+            )
+
+            state.failure_feedback = failure_feedback
+
+            state.status = "FAILURE_DETECTED"
+
+            state.record_event(
+                "FAILURE_DETECTED",
+                {
+                    "status": simulation_result["status"],
+                    "failed_tests": simulation_result[
+                        "failed_tests"
+                    ]
+                }
             )
 
             print(
@@ -196,6 +257,12 @@ class VerificationAgent:
                 )
             )
 
+            state.decision = decision
+
+            state.record_event(
+                "AGENT_DECISION_MADE"
+            )
+
             print(
                 "\n========== AGENT DECISION =========="
             )
@@ -208,7 +275,7 @@ class VerificationAgent:
 
             if simulation_result["status"] == "FAIL":
 
-                repair_attempt += 1
+                state.repair_attempts += 1
 
                 print(
                     "\n========================================"
@@ -235,6 +302,17 @@ class VerificationAgent:
                         rtl_info,
                         failure_feedback
                     )
+                )
+
+                state.localization = localization
+
+                state.record_event(
+                    "FAULT_LOCALIZED",
+                    {
+                        "signal": localization["signal"],
+                        "pattern": localization["pattern"],
+                        "confidence": localization["confidence"]
+                    }
                 )
 
                 print(
@@ -283,6 +361,12 @@ class VerificationAgent:
                         )
                     )
 
+                    state.diagnosis = diagnosis
+
+                    state.record_event(
+                        "FAULT_DIAGNOSED"
+                    )
+
                     print(
                         "\n========== AI DIAGNOSIS =========="
                     )
@@ -303,6 +387,12 @@ class VerificationAgent:
                             localization,
                             diagnosis
                         )
+                    )
+
+                    state.patch = patch
+
+                    state.record_event(
+                        "PATCH_GENERATED"
                     )
 
                     print(
@@ -346,7 +436,18 @@ class VerificationAgent:
                         repaired_rtl = Path(
                             "rtl/repaired"
                         ) / (
-                            f"repair_{repair_attempt}.v"
+                            f"repair_{state.repair_attempts}.v"
+                        )
+
+                        state.repaired_rtl = str(
+                            repaired_rtl
+                        )
+
+                        state.record_event(
+                            "PATCH_APPLIED",
+                            {
+                                "file": str(repaired_rtl)
+                            }
                         )
 
                         print(
@@ -385,6 +486,19 @@ class VerificationAgent:
                             )
                         )
 
+                        state.repair_validation = (
+                            repaired_simulation
+                        )
+
+                        state.record_event(
+                            "REPAIR_VALIDATED",
+                            {
+                                "status": repaired_simulation[
+                                    "status"
+                                ]
+                            }
+                        )
+
                         print(
                             "\n========== REPAIR VALIDATION =========="
                         )
@@ -420,6 +534,12 @@ class VerificationAgent:
                             ] == "PASS"
                         ):
 
+                            state.status = "SELF_HEALED"
+
+                            state.record_event(
+                                "SELF_HEALING_SUCCESSFUL"
+                            )
+
                             print(
                                 "\n========================================"
                             )
@@ -438,7 +558,7 @@ class VerificationAgent:
                                 "attempts":
                                     attempt,
                                 "repair_attempts":
-                                    repair_attempt,
+                                    state.repair_attempts,
                                 "rtl":
                                     rtl_info,
                                 "verification_plan":
@@ -453,6 +573,7 @@ class VerificationAgent:
                                     str(
                                         repaired_rtl
                                     ),
+                                "state": state.to_dict(),
                             }
 
                         print(
