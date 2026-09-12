@@ -19,7 +19,23 @@ class SimulationResultParser:
             }
 
         # --------------------------------
-        # Simulation failed
+        # Simulation timeout
+        # --------------------------------
+        if simulation_result.get("timeout"):
+
+            return {
+                "status": "TIMEOUT",
+                "compile_success": True,
+                "simulation_success": False,
+                "output": simulation_result["stdout"],
+                "errors": "Simulation exceeded timeout limit.",
+                "warnings": [],
+                "passed_tests": 0,
+                "failed_tests": 0,
+            }
+
+        # --------------------------------
+        # Simulation runtime error
         # --------------------------------
         if not simulation_result["success"]:
 
@@ -35,8 +51,9 @@ class SimulationResultParser:
             }
 
         # --------------------------------
-        # Simulation completed
+        # Successful simulation
         # --------------------------------
+
         output = simulation_result["stdout"]
 
         passed_tests = output.count("PASS:")

@@ -65,7 +65,7 @@ module adder_tb;
 
         $display("Verification completed.");
 
-        $finish;
+        #1000000;
 
     end
 
