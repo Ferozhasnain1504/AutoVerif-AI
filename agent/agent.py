@@ -17,17 +17,17 @@ class VerificationAgent:
         self.simulator = SimulationEngine()
         self.decision_engine = DecisionEngine()
 
-    def run(self, rtl_file):
+    def run(self, rtl_file, max_attempts=3):
 
         print("\n========================================")
         print("        AUTOVERIF-AI AGENT")
         print("========================================")
 
         # --------------------------------
-        # STEP 1: OBSERVE RTL
+        # OBSERVE
         # --------------------------------
 
-        print("\n[1/5] Analyzing RTL...")
+        print("\n[1] Analyzing RTL...")
 
         rtl_info = self.analyzer.analyze(
             rtl_file
@@ -36,10 +36,10 @@ class VerificationAgent:
         print("RTL analysis completed.")
 
         # --------------------------------
-        # STEP 2: DECIDE VERIFICATION PLAN
+        # DECIDE / PLAN
         # --------------------------------
 
-        print("\n[2/5] Creating verification plan...")
+        print("\n[2] Creating verification plan...")
 
         verification_plan = self.planner.analyze_rtl(
             rtl_info
@@ -48,65 +48,119 @@ class VerificationAgent:
         print("Verification plan created.")
 
         # --------------------------------
-        # STEP 3: ACT - GENERATE TESTBENCH
+        # AGENT LOOP
         # --------------------------------
 
-        print("\n[3/5] Generating testbench...")
+        for attempt in range(1, max_attempts + 1):
 
-        testbench = self.generator.generate(
-            rtl_info,
-            verification_plan
-        )
+            print("\n========================================")
+            print(f"        VERIFICATION ATTEMPT {attempt}")
+            print("========================================")
 
-        output_file = Path(
-            "testbench/generated_tb.v"
-        )
+            # -----------------------------
+            # ACT
+            # -----------------------------
 
-        output_file.write_text(
-            testbench,
-            encoding="utf-8"
-        )
+            print("\n[3] Generating testbench...")
 
-        print(
-            f"Testbench saved to: {output_file}"
-        )
+            testbench = self.generator.generate(
+                rtl_info,
+                verification_plan
+            )
 
-        # --------------------------------
-        # STEP 4: EVALUATE
-        # --------------------------------
+            output_file = Path(
+                "testbench/generated_tb.v"
+            )
 
-        print("\n[4/5] Running simulation...")
+            output_file.write_text(
+                testbench,
+                encoding="utf-8"
+            )
 
-        simulation_result = self.simulator.execute(
-            rtl_file,
-            str(output_file)
-        )
+            print(
+                f"Testbench saved to: {output_file}"
+            )
 
-        print("Simulation completed.")
+            # -----------------------------
+            # EVALUATE
+            # -----------------------------
 
-        print(
-            "\nSimulation status:",
-            simulation_result["status"]
-        )
+            print("\n[4] Running simulation...")
 
-        # --------------------------------
-        # STEP 5: DECIDE NEXT ACTION
-        # --------------------------------
+            simulation_result = self.simulator.execute(
+                rtl_file,
+                str(output_file)
+            )
 
-        print("\n[5/5] Agent deciding next action...")
+            print("\nSimulation status:",
+                  simulation_result["status"])
 
-        decision = self.decision_engine.decide(
-            simulation_result
-        )
+            print(
+                "Passed tests:",
+                simulation_result["passed_tests"]
+            )
 
-        print("\n========== AGENT DECISION ==========")
+            print(
+                "Failed tests:",
+                simulation_result["failed_tests"]
+            )
 
-        print(decision)
+            # -----------------------------
+            # DECIDE
+            # -----------------------------
 
-        return {
-            "rtl": rtl_info,
-            "verification_plan": verification_plan,
-            "testbench": testbench,
-            "simulation": simulation_result,
-            "decision": decision,
-        }
+            print("\n[5] Agent deciding next action...")
+
+            decision = self.decision_engine.decide(
+                simulation_result
+            )
+
+            print("\n========== AGENT DECISION ==========")
+
+            print(decision)
+
+            # -----------------------------
+            # STOP IF SUCCESSFUL
+            # -----------------------------
+
+            if simulation_result["status"] == "PASS":
+
+                print("\n========================================")
+                print("       VERIFICATION SUCCESSFUL")
+                print("========================================")
+
+                return {
+                    "status": "SUCCESS",
+                    "attempts": attempt,
+                    "rtl": rtl_info,
+                    "verification_plan": verification_plan,
+                    "simulation": simulation_result,
+                    "decision": decision,
+                }
+
+            # -----------------------------
+            # STOP IF LAST ATTEMPT
+            # -----------------------------
+
+            if attempt == max_attempts:
+
+                print("\n========================================")
+                print("       MAX ATTEMPTS REACHED")
+                print("========================================")
+
+                return {
+                    "status": "FAILED",
+                    "attempts": attempt,
+                    "rtl": rtl_info,
+                    "verification_plan": verification_plan,
+                    "simulation": simulation_result,
+                    "decision": decision,
+                }
+
+            # -----------------------------
+            # ADAPT
+            # -----------------------------
+
+            print("\n[6] Agent will adapt and retry...")
+
+        return None

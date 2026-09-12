@@ -6,7 +6,8 @@ def main():
     agent = VerificationAgent()
 
     result = agent.run(
-        "rtl/adder.v"
+        "rtl/adder.v",
+        max_attempts=3
     )
 
     print("\n========================================")
@@ -14,7 +15,17 @@ def main():
     print("========================================")
 
     print(
-        "\nSimulation Status:",
+        "\nOverall Status:",
+        result["status"]
+    )
+
+    print(
+        "Attempts:",
+        result["attempts"]
+    )
+
+    print(
+        "Simulation Status:",
         result["simulation"]["status"]
     )
 
@@ -28,7 +39,7 @@ def main():
         result["simulation"]["failed_tests"]
     )
 
-    print("\nDecision:")
+    print("\nFinal Decision:")
 
     print(
         result["decision"]
