@@ -1,89 +1,103 @@
 #! /c/Source/iverilog-install/bin/vvp
 :ivl_version "12.0 (devel)" "(s20150603-1539-g2693dd32b)";
 :ivl_delay_selection "TYPICAL";
-:vpi_time_precision - 12;
+:vpi_time_precision + 0;
 :vpi_module "C:\iverilog\lib\ivl\system.vpi";
 :vpi_module "C:\iverilog\lib\ivl\vhdl_sys.vpi";
 :vpi_module "C:\iverilog\lib\ivl\vhdl_textio.vpi";
 :vpi_module "C:\iverilog\lib\ivl\v2005_math.vpi";
 :vpi_module "C:\iverilog\lib\ivl\va_math.vpi";
-S_00000206475459b0 .scope module, "adder_tb" "adder_tb" 2 3;
- .timescale -9 -12;
-v0000020647522f60_0 .var "a", 3 0;
-v0000020647523000_0 .var "b", 3 0;
-v00000206475230a0_0 .net "sum", 4 0, L_00000206475e4d10;  1 drivers
-S_0000020647555b20 .scope task, "check_result" "check_result" 2 16, 2 16 0, S_00000206475459b0;
- .timescale -9 -12;
-v00000206475453e0_0 .var "expected", 4 0;
-v0000020647523490_0 .var "test_a", 3 0;
-v0000020647545b40_0 .var "test_b", 3 0;
-TD_adder_tb.check_result ;
-    %load/vec4 v0000020647523490_0;
-    %store/vec4 v0000020647522f60_0, 0, 4;
-    %load/vec4 v0000020647545b40_0;
-    %store/vec4 v0000020647523000_0, 0, 4;
-    %delay 10000, 0;
-    %load/vec4 v00000206475230a0_0;
-    %load/vec4 v00000206475453e0_0;
-    %cmp/e;
-    %jmp/0xz  T_0.0, 4;
-    %vpi_call 2 31 "$display", "PASS: a=%d b=%d sum=%d", v0000020647522f60_0, v0000020647523000_0, v00000206475230a0_0 {0 0 0};
-    %jmp T_0.1;
-T_0.0 ;
-    %vpi_call 2 41 "$display", "FAIL: a=%d b=%d expected=%d actual=%d", v0000020647522f60_0, v0000020647523000_0, v00000206475453e0_0, v00000206475230a0_0 {0 0 0};
-T_0.1 ;
-    %end;
-S_0000020647555cb0 .scope module, "uut" "adder" 2 10, 3 1 0, S_00000206475459b0;
+S_0000028d3d05c750 .scope module, "tb_adder" "tb_adder" 2 1;
+ .timescale 0 0;
+v0000028d3d072e20_0 .var "a", 3 0;
+v0000028d3d072ec0_0 .var "b", 3 0;
+v0000028d3d072f60_0 .var/i "error_count", 31 0;
+v0000028d3d073000_0 .var "expected_sum", 4 0;
+v0000028d3d0730a0_0 .var/i "i", 31 0;
+v0000028d3d0a40a0_0 .var/i "j", 31 0;
+v0000028d3d0a4140_0 .net "sum", 4 0, L_0000028d3d138170;  1 drivers
+S_0000028d3d096840 .scope module, "dut" "adder" 2 12, 3 1 0, S_0000028d3d05c750;
  .timescale 0 0;
     .port_info 0 /INPUT 4 "a";
     .port_info 1 /INPUT 4 "b";
     .port_info 2 /OUTPUT 5 "sum";
-v0000020647545be0_0 .net *"_ivl_0", 4 0, L_0000020647554760;  1 drivers
-L_000002064759c858 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0000020647555e40_0 .net *"_ivl_3", 0 0, L_000002064759c858;  1 drivers
-v0000020647555ee0_0 .net *"_ivl_4", 4 0, L_0000020647554800;  1 drivers
-L_000002064759c8a0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0000020647522ce0_0 .net *"_ivl_7", 0 0, L_000002064759c8a0;  1 drivers
-v0000020647522d80_0 .net "a", 3 0, v0000020647522f60_0;  1 drivers
-v0000020647522e20_0 .net "b", 3 0, v0000020647523000_0;  1 drivers
-v0000020647522ec0_0 .net "sum", 4 0, L_00000206475e4d10;  alias, 1 drivers
-L_0000020647554760 .concat [ 4 1 0 0], v0000020647522f60_0, L_000002064759c858;
-L_0000020647554800 .concat [ 4 1 0 0], v0000020647523000_0, L_000002064759c8a0;
-L_00000206475e4d10 .arith/sum 5, L_0000020647554760, L_0000020647554800;
-    .scope S_00000206475459b0;
-T_1 ;
-    %vpi_call 2 58 "$display", "Starting verification..." {0 0 0};
-    %pushi/vec4 0, 0, 4;
-    %store/vec4 v0000020647523490_0, 0, 4;
-    %pushi/vec4 0, 0, 4;
-    %store/vec4 v0000020647545b40_0, 0, 4;
-    %pushi/vec4 0, 0, 5;
-    %store/vec4 v00000206475453e0_0, 0, 5;
-    %fork TD_adder_tb.check_result, S_0000020647555b20;
-    %join;
-    %pushi/vec4 5, 0, 4;
-    %store/vec4 v0000020647523490_0, 0, 4;
-    %pushi/vec4 3, 0, 4;
-    %store/vec4 v0000020647545b40_0, 0, 4;
-    %pushi/vec4 8, 0, 5;
-    %store/vec4 v00000206475453e0_0, 0, 5;
-    %fork TD_adder_tb.check_result, S_0000020647555b20;
-    %join;
-    %pushi/vec4 15, 0, 4;
-    %store/vec4 v0000020647523490_0, 0, 4;
-    %pushi/vec4 15, 0, 4;
-    %store/vec4 v0000020647545b40_0, 0, 4;
-    %pushi/vec4 30, 0, 5;
-    %store/vec4 v00000206475453e0_0, 0, 5;
-    %fork TD_adder_tb.check_result, S_0000020647555b20;
-    %join;
-    %vpi_call 2 66 "$display", "Verification completed." {0 0 0};
-    %delay 1000000000, 0;
+v0000028d3d073470_0 .net *"_ivl_0", 4 0, L_0000028d3d0a41e0;  1 drivers
+L_0000028d3d0ef858 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0000028d3d05c8e0_0 .net *"_ivl_3", 0 0, L_0000028d3d0ef858;  1 drivers
+v0000028d3d05c980_0 .net *"_ivl_4", 4 0, L_0000028d3d1382b0;  1 drivers
+L_0000028d3d0ef8a0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0000028d3d0969d0_0 .net *"_ivl_7", 0 0, L_0000028d3d0ef8a0;  1 drivers
+v0000028d3d096a70_0 .net "a", 3 0, v0000028d3d072e20_0;  1 drivers
+v0000028d3d072ce0_0 .net "b", 3 0, v0000028d3d072ec0_0;  1 drivers
+v0000028d3d072d80_0 .net "sum", 4 0, L_0000028d3d138170;  alias, 1 drivers
+L_0000028d3d0a41e0 .concat [ 4 1 0 0], v0000028d3d072e20_0, L_0000028d3d0ef858;
+L_0000028d3d1382b0 .concat [ 4 1 0 0], v0000028d3d072ec0_0, L_0000028d3d0ef8a0;
+L_0000028d3d138170 .arith/sum 5, L_0000028d3d0a41e0, L_0000028d3d1382b0;
+    .scope S_0000028d3d05c750;
+T_0 ;
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0000028d3d072f60_0, 0, 32;
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0000028d3d0730a0_0, 0, 32;
+T_0.0 ;
+    %load/vec4 v0000028d3d0730a0_0;
+    %cmpi/s 16, 0, 32;
+    %jmp/0xz T_0.1, 5;
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0000028d3d0a40a0_0, 0, 32;
+T_0.2 ;
+    %load/vec4 v0000028d3d0a40a0_0;
+    %cmpi/s 16, 0, 32;
+    %jmp/0xz T_0.3, 5;
+    %load/vec4 v0000028d3d0730a0_0;
+    %pad/s 4;
+    %store/vec4 v0000028d3d072e20_0, 0, 4;
+    %load/vec4 v0000028d3d0a40a0_0;
+    %pad/s 4;
+    %store/vec4 v0000028d3d072ec0_0, 0, 4;
+    %load/vec4 v0000028d3d072e20_0;
+    %pad/u 5;
+    %load/vec4 v0000028d3d072ec0_0;
+    %pad/u 5;
+    %add;
+    %store/vec4 v0000028d3d073000_0, 0, 5;
+    %delay 10, 0;
+    %load/vec4 v0000028d3d0a4140_0;
+    %load/vec4 v0000028d3d073000_0;
+    %cmp/ne;
+    %jmp/0xz  T_0.4, 6;
+    %vpi_call 2 32 "$display", "FAIL: a = %d, b = %d | expected sum = %d, got sum = %d", v0000028d3d072e20_0, v0000028d3d072ec0_0, v0000028d3d073000_0, v0000028d3d0a4140_0 {0 0 0};
+    %load/vec4 v0000028d3d072f60_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0000028d3d072f60_0, 0, 32;
+    %jmp T_0.5;
+T_0.4 ;
+    %vpi_call 2 35 "$display", "PASS: a = %d, b = %d | expected sum = %d, got sum = %d", v0000028d3d072e20_0, v0000028d3d072ec0_0, v0000028d3d073000_0, v0000028d3d0a4140_0 {0 0 0};
+T_0.5 ;
+    %load/vec4 v0000028d3d0a40a0_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0000028d3d0a40a0_0, 0, 32;
+    %jmp T_0.2;
+T_0.3 ;
+    %load/vec4 v0000028d3d0730a0_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0000028d3d0730a0_0, 0, 32;
+    %jmp T_0.0;
+T_0.1 ;
+    %load/vec4 v0000028d3d072f60_0;
+    %cmpi/e 0, 0, 32;
+    %jmp/0xz  T_0.6, 4;
+    %vpi_call 2 42 "$display", "PASS: All 256 tests passed." {0 0 0};
+    %jmp T_0.7;
+T_0.6 ;
+    %vpi_call 2 44 "$display", "FAIL: Total failures = %0d", v0000028d3d072f60_0 {0 0 0};
+T_0.7 ;
+    %vpi_call 2 47 "$finish" {0 0 0};
     %end;
-    .thread T_1;
+    .thread T_0;
 # The file index is used to find the file name in the following table.
 :file_names 4;
     "N/A";
     "<interactive>";
-    "testbench\adder_tb.v";
+    "testbench\generated_tb.v";
     "rtl\adder.v";
