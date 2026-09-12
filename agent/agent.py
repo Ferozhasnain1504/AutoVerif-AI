@@ -4,6 +4,8 @@ from agent.rtl_analyzer import RTLAnalyzer
 from agent.planner import VerificationPlanner
 from agent.testbench_generator import TestbenchGenerator
 from agent.decision_engine import DecisionEngine
+from agent.failure_analyzer import FailureAnalyzer
+from agent.adaptation_engine import AdaptationEngine
 from simulator.simulation_engine import SimulationEngine
 
 
@@ -16,6 +18,8 @@ class VerificationAgent:
         self.generator = TestbenchGenerator()
         self.simulator = SimulationEngine()
         self.decision_engine = DecisionEngine()
+        self.failure_analyzer = FailureAnalyzer()
+        self.adaptation_engine = AdaptationEngine()
 
     def run(self, rtl_file, max_attempts=3):
 
@@ -23,10 +27,7 @@ class VerificationAgent:
         print("        AUTOVERIF-AI AGENT")
         print("========================================")
 
-        # --------------------------------
         # OBSERVE
-        # --------------------------------
-
         print("\n[1] Analyzing RTL...")
 
         rtl_info = self.analyzer.analyze(
@@ -35,10 +36,7 @@ class VerificationAgent:
 
         print("RTL analysis completed.")
 
-        # --------------------------------
-        # DECIDE / PLAN
-        # --------------------------------
-
+        # PLAN
         print("\n[2] Creating verification plan...")
 
         verification_plan = self.planner.analyze_rtl(
@@ -47,25 +45,25 @@ class VerificationAgent:
 
         print("Verification plan created.")
 
-        # --------------------------------
-        # AGENT LOOP
-        # --------------------------------
+        # ADAPTATION MEMORY
+        adaptation = None
 
+        # AGENT LOOP
         for attempt in range(1, max_attempts + 1):
 
             print("\n========================================")
-            print(f"        VERIFICATION ATTEMPT {attempt}")
+            print(
+                f"        VERIFICATION ATTEMPT {attempt}"
+            )
             print("========================================")
 
-            # -----------------------------
             # ACT
-            # -----------------------------
-
             print("\n[3] Generating testbench...")
 
             testbench = self.generator.generate(
                 rtl_info,
-                verification_plan
+                verification_plan,
+                adaptation=adaptation
             )
 
             output_file = Path(
@@ -81,10 +79,7 @@ class VerificationAgent:
                 f"Testbench saved to: {output_file}"
             )
 
-            # -----------------------------
             # EVALUATE
-            # -----------------------------
-
             print("\n[4] Running simulation...")
 
             simulation_result = self.simulator.execute(
@@ -105,10 +100,20 @@ class VerificationAgent:
                 simulation_result["failed_tests"]
             )
 
-            # -----------------------------
-            # DECIDE
-            # -----------------------------
+            # OBSERVE FAILURE
+            failure_feedback = (
+                self.failure_analyzer.analyze(
+                    simulation_result
+                )
+            )
 
+            print("\n========== FAILURE ANALYSIS ==========")
+
+            print(
+                failure_feedback["summary"]
+            )
+
+            # DECIDE
             print("\n[5] Agent deciding next action...")
 
             decision = self.decision_engine.decide(
@@ -119,10 +124,7 @@ class VerificationAgent:
 
             print(decision)
 
-            # -----------------------------
-            # STOP IF SUCCESSFUL
-            # -----------------------------
-
+            # SUCCESS
             if simulation_result["status"] == "PASS":
 
                 print("\n========================================")
@@ -136,12 +138,10 @@ class VerificationAgent:
                     "verification_plan": verification_plan,
                     "simulation": simulation_result,
                     "decision": decision,
+                    "adaptation": adaptation,
                 }
 
-            # -----------------------------
-            # STOP IF LAST ATTEMPT
-            # -----------------------------
-
+            # LAST ATTEMPT
             if attempt == max_attempts:
 
                 print("\n========================================")
@@ -155,12 +155,29 @@ class VerificationAgent:
                     "verification_plan": verification_plan,
                     "simulation": simulation_result,
                     "decision": decision,
+                    "adaptation": adaptation,
                 }
 
-            # -----------------------------
             # ADAPT
-            # -----------------------------
+            print("\n[6] Analyzing failure for adaptation...")
 
-            print("\n[6] Agent will adapt and retry...")
+            adaptation = (
+                self.adaptation_engine.analyze_failure(
+                    rtl_info,
+                    verification_plan,
+                    failure_feedback
+                )
+            )
+
+            print(
+                "\n========== ADAPTATION =========="
+            )
+
+            print(adaptation)
+
+            print(
+                "\n[7] Agent will regenerate "
+                "the testbench using this adaptation..."
+            )
 
         return None

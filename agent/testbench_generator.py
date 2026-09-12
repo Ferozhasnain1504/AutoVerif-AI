@@ -6,7 +6,12 @@ class TestbenchGenerator:
     def __init__(self):
         self.llm = LLMClient()
 
-    def generate(self, rtl_info, verification_plan):
+    def generate(
+        self,
+        rtl_info,
+        verification_plan,
+        adaptation=None
+    ):
 
         prompt = f"""
 You are an expert Verilog verification engineer.
@@ -38,6 +43,10 @@ Assignments:
 VERIFICATION PLAN:
 
 {verification_plan}
+
+PREVIOUS ATTEMPT ADAPTATION:
+
+{adaptation if adaptation else "No previous failure. This is the first verification attempt."}
 
 STRICT REQUIREMENTS:
 

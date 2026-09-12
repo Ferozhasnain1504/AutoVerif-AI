@@ -1,12 +1,12 @@
 .venv/
-__pycache__/
 *.pyc
 .env
 *.log
 *.vcd
 *.fst
 reports/*
-.venv/
 __pycache__/
 simulator/build/
 testbench/generated_tb.v
+testbench/adaptive_tb.v
+testbench/adapted_tb.v
