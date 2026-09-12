@@ -2,8 +2,11 @@ class SimulationResultParser:
 
     def parse(self, compilation_result, simulation_result):
 
+        # --------------------------------
         # Compilation failed
+        # --------------------------------
         if not compilation_result["success"]:
+
             return {
                 "status": "COMPILE_ERROR",
                 "compile_success": False,
@@ -15,8 +18,11 @@ class SimulationResultParser:
                 "failed_tests": 0,
             }
 
+        # --------------------------------
         # Simulation failed
+        # --------------------------------
         if not simulation_result["success"]:
+
             return {
                 "status": "SIMULATION_ERROR",
                 "compile_success": True,
@@ -28,7 +34,9 @@ class SimulationResultParser:
                 "failed_tests": 0,
             }
 
-        # Simulation completed successfully
+        # --------------------------------
+        # Simulation completed
+        # --------------------------------
         output = simulation_result["stdout"]
 
         passed_tests = output.count("PASS:")
@@ -36,8 +44,10 @@ class SimulationResultParser:
 
         if failed_tests > 0:
             status = "FAIL"
+
         elif passed_tests > 0:
             status = "PASS"
+
         else:
             status = "COMPLETED"
 

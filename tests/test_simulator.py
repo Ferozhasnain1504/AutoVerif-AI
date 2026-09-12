@@ -14,13 +14,20 @@ def main():
 
     print("Status:", result["status"])
 
-    if "output" in result:
-        print("\nSimulation Output:")
-        print(result["output"])
+    print("Compile Success:", result["compile_success"])
 
-    if "stderr" in result:
+    print("Simulation Success:", result["simulation_success"])
+
+    print("Passed Tests:", result["passed_tests"])
+
+    print("Failed Tests:", result["failed_tests"])
+
+    print("\nSimulation Output:")
+    print(result["output"])
+
+    if result["errors"]:
         print("\nErrors:")
-        print(result["stderr"])
+        print(result["errors"])
 
 
 if __name__ == "__main__":
