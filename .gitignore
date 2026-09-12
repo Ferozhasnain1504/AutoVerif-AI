@@ -6,3 +6,6 @@ __pycache__/
 *.vcd
 *.fst
 reports/*
+.venv/
+__pycache__/
+simulator/build/
