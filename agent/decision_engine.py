@@ -7,15 +7,21 @@ class DecisionEngine:
 
         self.llm = LLMClient()
 
-    def decide(self, simulation_result):
+    def decide(
+        self,
+        simulation_result
+    ):
 
         prompt = f"""
-You are an autonomous hardware verification agent.
+You are an autonomous hardware verification
+and RTL repair decision engine.
 
-Analyze the simulation result below and decide what the
-verification system should do next.
+Analyze the simulation result below and decide
+what the verification system should do next.
 
-Simulation status:
+================ SIMULATION RESULT ================
+
+Status:
 {simulation_result["status"]}
 
 Compilation successful:
@@ -36,22 +42,41 @@ Simulation output:
 Errors:
 {simulation_result["errors"]}
 
-Choose exactly ONE action from:
+================ AVAILABLE ACTIONS ================
+
+Choose exactly ONE:
 
 PASS
+REPAIR_RTL
 REGENERATE_TESTBENCH
 INVESTIGATE_SIMULATION_ERROR
 HANDLE_TIMEOUT
 
-Rules:
+================ DECISION RULES ================
 
-- If status is PASS, choose PASS.
-- If status is FAIL, choose REGENERATE_TESTBENCH.
-- If status is COMPILE_ERROR, choose REGENERATE_TESTBENCH.
-- If status is SIMULATION_ERROR, choose INVESTIGATE_SIMULATION_ERROR.
-- If status is TIMEOUT, choose HANDLE_TIMEOUT.
+1. If status is PASS:
+   choose PASS.
 
-Return your response in exactly this format:
+2. If status is FAIL and the simulation executed
+   successfully:
+   choose REPAIR_RTL.
+
+3. If status is COMPILE_ERROR:
+   choose REGENERATE_TESTBENCH.
+
+4. If status is SIMULATION_ERROR:
+   choose INVESTIGATE_SIMULATION_ERROR.
+
+5. If status is TIMEOUT:
+   choose HANDLE_TIMEOUT.
+
+6. If status is COMPLETED:
+   choose REGENERATE_TESTBENCH.
+
+The system should prefer RTL repair when a valid
+functional verification failure has been observed.
+
+Return exactly:
 
 ACTION: <one action>
 
@@ -60,6 +85,6 @@ REASON: <short explanation>
 Do not return markdown.
 """
 
-        response = self.llm.generate(prompt)
-
-        return response
+        return self.llm.generate(
+            prompt
+        )

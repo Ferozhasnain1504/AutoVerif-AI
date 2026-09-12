@@ -47,7 +47,7 @@ def main():
         "failed_tests": 1,
 
         "output": (
-            "FAIL: sum expected=8 actual=7\n"
+            "FAIL: sum expected=8 actual=9\n"
         ),
 
         "errors": [],
@@ -96,8 +96,8 @@ def main():
     )
 
     print(
-    "Expression:",
-    localization["expression"]
+        "Expression:",
+        localization["expression"]
     )
 
     print(
@@ -128,11 +128,6 @@ def main():
     print(
         "Reason:",
         localization["reason"]
-    )
-
-    print(
-        "Confidence:",
-        localization["confidence"]
     )
 
     print(

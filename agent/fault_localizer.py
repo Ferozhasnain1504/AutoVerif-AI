@@ -79,80 +79,62 @@ class FaultLocalizer:
 
                 return {
                     "fault_found": True,
-
                     "signal": target,
-
                     "expression": expression,
-
                     "expected": (
                         mismatch["expected"]
                         if mismatch
                         else None
                     ),
-
                     "actual": (
                         mismatch["actual"]
                         if mismatch
                         else None
                     ),
-
                     "difference": (
                         mismatch["difference"]
                         if mismatch
                         else None
                     ),
-
                     "pattern": expression_analysis[
                         "pattern"
                     ],
-
                     "finding": expression_analysis[
                         "finding"
                     ],
-
                     "reason": reason,
-
                     "confidence": "HIGH",
                 }
 
         return {
             "fault_found": True,
-
             "signal": None,
-
             "expression": None,
-
             "expected": (
                 mismatch["expected"]
                 if mismatch
                 else None
             ),
-
             "actual": (
                 mismatch["actual"]
                 if mismatch
                 else None
             ),
-
             "difference": (
                 mismatch["difference"]
                 if mismatch
                 else None
             ),
-
             "pattern": "UNKNOWN",
-
             "finding": (
                 "No matching RTL assignment "
                 "was identified."
             ),
-
             "reason": (
                 "A verification failure was detected, "
                 "but no directly matching RTL assignment "
                 "could be identified."
             ),
-
             "confidence": "LOW",
         }
 
@@ -161,9 +143,14 @@ class FaultLocalizer:
         failure_output
     ):
 
+        # Format produced by the generated testbench:
+        #
+        # Expected sum = 8 (...) ... Got sum = 9 (...)
+        #
         pattern = (
-            r"expected\s*=\s*(\d+)"
-            r"\s+actual\s*=\s*(\d+)"
+            r"Expected\s+\w+\s*=\s*(\d+)"
+            r".*?"
+            r"Got\s+\w+\s*=\s*(\d+)"
         )
 
         match = re.search(
@@ -172,7 +159,40 @@ class FaultLocalizer:
             re.IGNORECASE
         )
 
+        if match:
+
+            expected = int(
+                match.group(1)
+            )
+
+            actual = int(
+                match.group(2)
+            )
+
+            return {
+                "expected": expected,
+                "actual": actual,
+                "difference": actual - expected,
+            }
+
+        # Fallback for the manually created failing
+        # testbench format:
+        #
+        # FAIL: expected=8 actual=9
+        #
+        fallback_pattern = (
+            r"expected\s*=\s*(\d+)"
+            r"\s+actual\s*=\s*(\d+)"
+        )
+
+        match = re.search(
+            fallback_pattern,
+            failure_output,
+            re.IGNORECASE
+        )
+
         if not match:
+
             return None
 
         expected = int(
@@ -206,8 +226,6 @@ class FaultLocalizer:
 
         difference = mismatch["difference"]
 
-        # Detect unnecessary positive constant
-
         positive_constant = re.search(
             r"\+\s*(\d+)\s*$",
             expression
@@ -223,7 +241,6 @@ class FaultLocalizer:
 
                 return {
                     "pattern": "EXTRA_POSITIVE_CONSTANT",
-
                     "finding": (
                         f"Expression contains an extra "
                         f"+{constant}, matching the "
@@ -231,8 +248,6 @@ class FaultLocalizer:
                         f"+{difference}."
                     )
                 }
-
-        # Detect unnecessary negative constant
 
         negative_constant = re.search(
             r"-\s*(\d+)\s*$",
@@ -249,7 +264,6 @@ class FaultLocalizer:
 
                 return {
                     "pattern": "EXTRA_NEGATIVE_CONSTANT",
-
                     "finding": (
                         f"Expression contains an extra "
                         f"-{constant}, matching the "
@@ -260,7 +274,6 @@ class FaultLocalizer:
 
         return {
             "pattern": "NO_SIMPLE_PATTERN",
-
             "finding": (
                 "No simple constant-offset pattern "
                 "was detected."

@@ -4,6 +4,7 @@ from agent.llm_client import LLMClient
 class TestbenchGenerator:
 
     def __init__(self):
+
         self.llm = LLMClient()
 
     def generate(
@@ -18,17 +19,14 @@ You are an expert Verilog verification engineer.
 
 Your task is to generate ONLY a testbench for an EXISTING RTL module.
 
-IMPORTANT:
-
 The RTL module already exists.
-
 You must NOT recreate, redefine, or copy the RTL module.
 
 The testbench must instantiate the existing DUT.
 
-EXISTING RTL MODULE:
+================ RTL INFORMATION ================
 
-Module name:
+Module:
 {rtl_info["module"]}
 
 Inputs:
@@ -40,56 +38,96 @@ Outputs:
 Assignments:
 {rtl_info["assignments"]}
 
-VERIFICATION PLAN:
+================ VERIFICATION PLAN ================
 
 {verification_plan}
 
-PREVIOUS ATTEMPT ADAPTATION:
+================ PREVIOUS ADAPTATION ================
 
 {adaptation if adaptation else "No previous failure. This is the first verification attempt."}
 
-STRICT REQUIREMENTS:
+================ CRITICAL VERIFICATION RULES ================
+
+The testbench must independently determine the EXPECTED behavior
+of the DUT.
+
+NEVER derive the expected value by copying the RTL implementation.
+
+For example, if the RTL contains:
+
+assign sum = a + b + 1;
+
+and the intended behavior is addition:
+
+expected_sum = a + b;
+
+NOT:
+
+expected_sum = a + b + 1;
+
+The testbench must detect implementation bugs.
+
+The expected-value calculation must represent the INTENDED
+functional behavior, not the CURRENT RTL implementation.
+
+The testbench must contain real functional comparisons.
+
+Do not create a testbench that merely checks whether the
+DUT produces some value.
+
+Each test case must compare:
+
+EXPECTED VALUE
+against
+ACTUAL DUT OUTPUT
+
+and report PASS or FAIL accordingly.
+
+================ TESTING REQUIREMENTS ================
 
 1. Generate Verilog-2001 only.
 2. Generate ONLY the testbench.
 3. Do NOT generate the RTL module.
 4. Do NOT declare a module named "{rtl_info["module"]}".
-5. The DUT module "{rtl_info["module"]}" already exists in a separate RTL file.
+5. The existing DUT module is named "{rtl_info["module"]}".
 6. Create exactly ONE testbench module.
 7. The testbench module name must be "{rtl_info["module"]}_tb".
-8. Instantiate the existing DUT inside the testbench.
-9. Use the exact DUT port names provided above.
-10. Declare all required testbench signals.
-11. Test normal cases.
-12. Test boundary cases.
-13. Test important corner cases.
-14. Calculate expected outputs correctly.
-15. Compare actual outputs with expected outputs.
-16. Print exactly "PASS:" when a test passes.
-17. Print exactly "FAIL:" when a test fails.
-18. Use $finish to terminate the simulation.
-19. The testbench must compile with Icarus Verilog.
-20. Do not use SystemVerilog.
-21. Do not use classes.
-22. Do not use logic.
-23. Do not use bit.
-24. Do not use always_comb.
-25. Do not use always_ff.
-26. Do not use string variables.
-27. Do not use assertions.
-28. Do not include the RTL implementation.
-29. Do not include another copy of the DUT.
-30. Do not include markdown.
-31. Do not include ```verilog.
-32. Return ONLY the Verilog testbench source code.
+8. Instantiate the existing DUT.
+9. Declare appropriate reg inputs.
+10. Declare appropriate wire outputs.
+11. Generate meaningful functional test cases.
+12. Include boundary cases.
+13. Include representative normal cases.
+14. Include exhaustive testing when practical.
+15. Calculate expected outputs independently.
+16. Compare expected outputs with actual DUT outputs.
+17. Increment a failure counter whenever a mismatch occurs.
+18. Print clear PASS and FAIL messages.
+19. Print a final verification summary.
+20. Call $finish.
+21. The testbench must compile with Icarus Verilog.
+22. If a previous adaptation recommendation is provided,
+    incorporate relevant recommendations.
+23. Do not blindly trust the RTL implementation.
+24. Do not use the RTL assignment itself as the expected-value model.
+25. The testbench must be capable of detecting an incorrect
+    constant, incorrect operator, missing operation, or similar
+    functional defect.
+26. Do not generate self-fulfilling tests.
+27. The expected model must be independent from the DUT.
+28. Do not include another copy of the DUT.
+29. Do not include markdown.
+30. Do not include ```verilog.
+31. Return ONLY the Verilog testbench source code.
 
-The final output must contain exactly one module declaration:
+================ FINAL VALIDATION REQUIREMENT ================
 
-module {rtl_info["module"]}_tb
+Before returning the testbench, mentally verify:
 
-and it must instantiate:
+"If the RTL contains a deliberate +1 bug in an otherwise
+normal addition module, will this testbench detect it?"
 
-{rtl_info["module"]}
+If the answer is NO, revise the testbench.
 
 Return ONLY Verilog code.
 """
