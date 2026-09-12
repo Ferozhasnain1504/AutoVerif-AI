@@ -29,6 +29,15 @@ def main():
             f"  {name}: {width} bits"
         )
 
+    print("\nAssignments:")
+
+    for assignment in result["assignments"]:
+
+        print(
+            f"  {assignment['target']} = "
+            f"{assignment['expression']}"
+        )
+
 
 if __name__ == "__main__":
     main()

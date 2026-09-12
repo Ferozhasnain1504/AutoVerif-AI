@@ -17,14 +17,25 @@ class RTLAnalyzer:
 
         module_name = self._extract_module_name(code)
 
-        inputs = self._extract_ports(code, "input")
+        inputs = self._extract_ports(
+            code,
+            "input"
+        )
 
-        outputs = self._extract_ports(code, "output")
+        outputs = self._extract_ports(
+            code,
+            "output"
+        )
+
+        assignments = self._extract_assignments(
+            code
+        )
 
         return {
             "module": module_name,
             "inputs": inputs,
             "outputs": outputs,
+            "assignments": assignments,
         }
 
     def _extract_module_name(self, code):
@@ -45,7 +56,10 @@ class RTLAnalyzer:
 
         pattern = rf"{port_type}\s+\[(\d+):(\d+)\]\s+(\w+)"
 
-        matches = re.findall(pattern, code)
+        matches = re.findall(
+            pattern,
+            code
+        )
 
         ports = {}
 
@@ -58,3 +72,23 @@ class RTLAnalyzer:
             ports[name] = width
 
         return ports
+
+    def _extract_assignments(self, code):
+
+        pattern = r"\bassign\s+(\w+)\s*=\s*([^;]+)"
+
+        matches = re.findall(
+            pattern,
+            code
+        )
+
+        assignments = []
+
+        for target, expression in matches:
+
+            assignments.append({
+                "target": target,
+                "expression": expression.strip(),
+            })
+
+        return assignments
