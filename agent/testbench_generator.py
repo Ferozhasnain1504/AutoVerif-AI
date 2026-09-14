@@ -11,7 +11,8 @@ class TestbenchGenerator:
         self,
         rtl_info,
         verification_plan,
-        adaptation=None
+        adaptation=None,
+        reference_behavior=None
     ):
 
         prompt = f"""
@@ -41,6 +42,20 @@ Assignments:
 ================ VERIFICATION PLAN ================
 
 {verification_plan}
+
+================ REFERENCE MODEL ================
+
+{reference_behavior if reference_behavior else "No reference model provided."}
+
+The reference model represents the intended functional behavior.
+
+Use the reference model to determine EXPECTED outputs.
+
+IMPORTANT:
+The RTL implementation is NOT the source of truth.
+The reference model is the source of truth for expected behavior.
+
+Never modify the expected behavior to match the RTL.
 
 ================ PREVIOUS ADAPTATION ================
 

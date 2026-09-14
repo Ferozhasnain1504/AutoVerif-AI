@@ -12,6 +12,7 @@ from agent.patch_generator import PatchGenerator
 from agent.patch_applier import PatchApplier
 from agent.state import AgentState
 from agent.logger import ExecutionLogger
+from agent.reference_model import ReferenceModel
 
 from simulator.simulation_engine import SimulationEngine
 
@@ -33,6 +34,7 @@ class VerificationAgent:
         self.patch_generator = PatchGenerator()
         self.patch_applier = PatchApplier()
         self.logger = ExecutionLogger()
+        self.testbench_generator = TestbenchGenerator()
 
     def run(
         self,
@@ -111,12 +113,15 @@ class VerificationAgent:
 
             print("\n[3] Generating testbench...")
 
-            testbench = (
-                self.generator.generate(
-                    rtl_info,
-                    verification_plan,
-                    adaptation=adaptation
-                )
+            reference_model = ReferenceModel("adder")
+
+            reference_behavior = reference_model.get_expected_behavior()
+
+            testbench = self.testbench_generator.generate(
+                rtl_info,
+                verification_plan,
+                adaptation=state.adaptation,
+                reference_behavior=reference_behavior
             )
 
             testbench_file = Path(
